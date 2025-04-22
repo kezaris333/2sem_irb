@@ -26,6 +26,7 @@ class matrix {
     size_t size_column;
     size_t size_line;
 public:
+    //конструктор
     matrix(size_t str, size_t column) : size_line(str), size_column(column) {
         //выделение памяти
         matr = new double *[str];
@@ -44,156 +45,223 @@ public:
     }
 
 
-    // операторные методы, осуществляющие сложение матриц, умножение матриц, умножение матрицы на
-    //         число, умножение числа на матрицу, вычитание матриц
-
-    matrix operator+(matrix const &two) const {
-
-        if (size_column != two.size_column && size_line != two.size_line) {
-            //поймать ошибку
-        }
-
-        matrix new_matrix(size_line, size_column);
-
+    ~matrix() {
         for (int i = 0; i < size_line; i++) {
-            for (int j = 0; j < size_column; j++) {
-                new_matrix.matr[i][j] = matr[i][j] + two.matr[i][j];
+            delete[] matr[i];
+        }
+        delete[] matr;
+    }
+
+//this - pointer on class, на адрес
+//*this - сам объект
+
+
+
+    //конструктор копирования - новый объект как копия существующего
+    matrix(const matrix &other) : size_line(other.size_line), size_column(other.size_column) {
+
+        matr = new double *[size_line];
+//копирование данных и выделение памяти
+        for (size_t i = 0; i < size_line; i++) {
+            matr[i] = new double[size_column];
+            for (size_t j = 0; j < size_column; j++) {
+                matr[i][j] = other.matr[i][j];
+
             }
         }
-        return (new_matrix);
     }
 
 
-//если число столбцов в первом сомножителе равно числу строк во втором
-    matrix operator*(matrix const &two) const {
-        matrix new_matrix(size_line, two.size_column);
+    //оператор присваивания копированием - существующий объект копируем
+    matrix &operator=(const matrix &other) {
+        if (this == &other)
+            return *this;
 
-        if (size_column == two.size_line) {
-            for (size_t i = 0; i < size_line; i++) {
-                for (size_t j = 0; j < two.size_column; j++) {
-                    new_matrix.matr[i][j] = 0;
-                    for (size_t k = 0; k < size_column; k++) {
-                        new_matrix.matr[i][j] += matr[i][k] * two.matr[k][j];//почему +=
-                    }
+        //освобождаем старую память
+        for (size_t i = 0; i < size_line; i++) {
+            delete[] matr[i]; //удаляем каждую строку, это double* (строка матрицы)
+        }
+        delete[] matr; //удаляем массив указателей
+
+
+        size_column = other.size_column;
+        size_line = other.size_line;
+
+        for (size_t i = 0; i < size_line; i++) {
+            matr[i] = new double[size_column];
+            for (size_t j = 0; j < size_column; j++) {
+                matr[i][j] = other.matr[i][j];
+            }
+        }
+
+            return *this;
+
+        }
+
+
+
+
+
+        // операторные методы, осуществляющие сложение матриц, умножение матриц, умножение матрицы на
+        //         число, умножение числа на матрицу, вычитание матриц
+
+        matrix operator+(matrix const &two) const {
+
+            if (size_column != two.size_column && size_line != two.size_line) {
+                //поймать ошибку
+            }
+
+            matrix new_matrix(size_line, size_column);
+
+            for (int i = 0; i < size_line; i++) {
+                for (int j = 0; j < size_column; j++) {
+                    new_matrix.matr[i][j] = matr[i][j] + two.matr[i][j];
                 }
             }
             return (new_matrix);
-        } else {
-            //ошибка
         }
 
-    }
+
+//если число столбцов в первом сомножителе равно числу строк во втором
+        matrix operator*(matrix const &two) const {
+            matrix new_matrix(size_line, two.size_column);
+
+            if (size_column == two.size_line) {
+                for (size_t i = 0; i < size_line; i++) {
+                    for (size_t j = 0; j < two.size_column; j++) {
+                        new_matrix.matr[i][j] = 0;
+                        for (size_t k = 0; k < size_column; k++) {
+                            new_matrix.matr[i][j] += matr[i][k] * two.matr[k][j];//почему +=
+                        }
+                    }
+                }
+                return (new_matrix);
+            } else {
+                //ошибка
+            }
+
+        }
 
 
 //умножение матрицы на число
 
-    matrix operator*(double value) const {
-        double val = value;
-        matrix new_matrix(size_line, size_column);
-        for (size_t j = 0; j < size_line; j++) {
-            for (size_t i = 0; i < size_column; i++) {
-                new_matrix.matr[j][i] = matr[j][i] * val;
+        matrix operator*(double value) const {
+            double val = value;
+            matrix new_matrix(size_line, size_column);
+            for (size_t j = 0; j < size_line; j++) {
+                for (size_t i = 0; i < size_column; i++) {
+                    new_matrix.matr[j][i] = matr[j][i] * val;
+                }
             }
+            return (new_matrix);
         }
-        return (new_matrix);
-    }
 
 
 //умножение числа на матрицу
-    friend matrix operator*(double baaaabyyybeeee, matrix &babybe);
+        friend matrix operator*(double baaaabyyybeeee, matrix &babybe);
 
 
-    //вычитание матриц
-    matrix operator-(matrix const &two) {
-        if (size_column == two.size_column && size_line == two.size_line) {
-            matrix new_matrix(size_line, size_line);
-            for (int i = 0; i < size_line; i++) {
-                for (int j = 0; j < size_column; j++)
-                    new_matrix.matr[i][j] = matr[i][j] - two.matr[i][j];
+        //вычитание матриц
+        matrix operator-(matrix const &two) {
+            if (size_column == two.size_column && size_line == two.size_line) {
+                matrix new_matrix(size_line, size_line);
+                for (int i = 0; i < size_line; i++) {
+                    for (int j = 0; j < size_column; j++)
+                        new_matrix.matr[i][j] = matr[i][j] - two.matr[i][j];
+                }
+                return (new_matrix);
+            } else {
+                //поймать ошибку
+            }
+        }
+
+
+        //транспонирование - выловить ошибки
+        matrix trans() {
+            matrix new_matrix(size_line, size_column);
+
+            for (int row = 0; row < size_line; row++) {
+                for (int col = 0; col < size_column; col++) {
+                    new_matrix.matr[col][row] = matr[row][col]; //копируем значения с изменением индексов
+                }
             }
             return (new_matrix);
-        } else {
-            //поймать ошибку
+
         }
-    }
 
 
-    //транспонирование - выловить ошибки
-    matrix trans() {
-        matrix new_matrix(size_line, size_column);
+        //метод, возвращающий значение определителя матрицы, вычисленный при помощи метода Гаусса
+        double computeDeterminant() {
+            if (size_line != size_column)
+                return 0; //не квадратная матрица///////////////////////////////////////////
 
-        for (int row = 0; row < size_line; row++) {
-            for (int col = 0; col < size_column; col++) {
-                new_matrix.matr[col][row] = matr[row][col]; //копируем значения с изменением индексов
-            }
-        }
-        return (new_matrix);
+            double det = 1.0;
+            const double eps = 1e-10; //точность для сравнения с нулём
 
-    }
+            for (size_t i = 0; i < size_line; ++i) {
+                //поиск ведущего элемента в столбце i
+                size_t max_row = i;
+                for (size_t k = i + 1; k < size_line; ++k) {
+                    if (std::abs(matr[k][i]) > std::abs(matr[max_row][i])) {
+                        max_row = k;
+                    }
+                }
 
+                //если ведущий элемент нулевой матрица вырождена
+                if (std::abs(matr[max_row][i]) < eps) {
+                    return 0.0;
+                }
 
-    //метод, возвращающий значение определителя матрицы, вычисленный при помощи метода Гаусса
-    double computeDeterminant() {
-        if (size_line != size_column) return 0; //не квадратная матрица
+                //перестановка строк, если нужно
+                if (max_row != i) {
+                    // Меняем строки местами
+                    for (size_t j = 0; j < size_column; ++j) {
+                        double temp = matr[i][j];
+                        matr[i][j] = matr[max_row][j];
+                        matr[max_row][j] = temp;
+                    }
+                    det = -det; //при перестановке строк знак определителя меняется
+                }
 
-        double det = 1.0;
-        const double eps = 1e-10; //точность для сравнения с нулём
-
-        for (size_t i = 0; i < size_line; ++i) {
-            //поиск ведущего элемента в столбце i
-            size_t max_row = i;
-            for (size_t k = i + 1; k < size_line; ++k) {
-                if (std::abs(matr[k][i]) > std::abs(matr[max_row][i])) {
-                    max_row = k;
+                //зануление элементов ниже ведущего
+                for (size_t k = i + 1; k < size_line; ++k) {
+                    double factor = matr[k][i] / matr[i][i];
+                    for (size_t j = i; j < size_column; ++j) {
+                        matr[k][j] -= factor * matr[i][j];
+                    }
                 }
             }
 
-            //если ведущий элемент нулевой матрица вырождена
-            if (std::abs(matr[max_row][i]) < eps) {
-                return 0.0;
+            //вчисление определителя как произведения диагональных элементов
+            for (size_t i = 0; i < size_line; ++i) {
+                det *= matr[i][i];
             }
 
-            //перестановка строк, если нужно
-            if (max_row != i) {
-                // Меняем строки местами
-                for (size_t j = 0; j < size_column; ++j) {
-                    double temp = matr[i][j];
-                    matr[i][j] = matr[max_row][j];
-                    matr[max_row][j] = temp;
-                }
-                det = -det; //при перестановке строк знак определителя меняется
-            }
-
-            //зануление элементов ниже ведущего
-            for (size_t k = i + 1; k < size_line; ++k) {
-                double factor = matr[k][i] / matr[i][i];
-                for (size_t j = i; j < size_column; ++j) {
-                    matr[k][j] -= factor * matr[i][j];
-                }
-            }
+            return det;
         }
 
-        //вчисление определителя как произведения диагональных элементов
-        for (size_t i = 0; i < size_line; ++i) {
-            det *= matr[i][i];
+
+
+
+
+        double* operator[] () {
+
+            
+
         }
 
-        return det;
-    }
 
 
 
 
 
+        //метод, возвращающий обратную матрицу
 
-    //метод, возвращающий обратную матрицу
+        //1/detA * на матрицу алг доп
+        //найти матрицу миноров (-1)^i+j * Mij в месте Mij мы сначала вычеркиваем строки,
+        // а потом находим определитель из оставшихся (n−1)×(n−1).
 
-    //1/detA * на матрицу алг доп
-    //найти матрицу миноров (-1)^i+j * Mij в месте Mij мы сначала вычеркиваем строки,
-    // а потом находим определитель из оставшихся (n−1)×(n−1).
-
-    matrix revers_matrix() {
-
+        matrix revers_matrix() {
 
 
             if (size_line != size_column) {
@@ -234,10 +302,11 @@ public:
             matrix adjugate = cofactors.trans();
 
             return adjugate * (1.0 / det);
-    }
+        }
+    };
 
 
-};
+
 
 
 
@@ -246,10 +315,8 @@ public:
     }
 
 
-    int main() {
+      int main() {
         matrix minamina (10, 10);
-        minamina. []
-        minamina.
         std::cout << " " << std::endl;
         return 0;
     }
