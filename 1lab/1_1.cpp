@@ -1,127 +1,174 @@
+/*1. Реализовать класс encoder. В классе определить и реализовать:
+● конструктор, принимающий ключ шифрования в виде массив байтов типа unsigned char const * и размер
+этого массива
+● mutator для значения ключа
+● метод encode, который принимает путь ко входному файлу (типа char const *), выходному файлу (типа
+char const *) и флаг, отвечающий за то, выполнять шифрование или дешифрование (типа bool) и
+выполняет процесс шифрования/дешифрования файла
+Шифрование/дешифрование файлов выполняется алгоритмом RC4. Структура содержимого файлов произвольна.
+Продемонстрировать работу класса, произведя шифрование/дешифрование различных файлов: текстовых,
+графических, аудио, видео, исполняемых*/
+
+
+//
+// #include <iostream>
+// #include <fstream>
+//
+// using namespace std;
+//
+//
+// class encoder  {
+//     unsigned char* key;
+//     size_t keylen;
+//     unsigned char S[256];
+//     unsigned char i, j;
+//
+//  void ksa () {
+//      for (int i = 0; i < 256; i++) { //иниц блока S 1234567
+//          S[i] = i;
+//      }
+//
+//      //ksa
+//      i = 0, j = 0;
+//      while (i < 256) {
+//          j = (j + S[i] + K[i] /*%keylen*/) % 256;
+//          unsigned char temp = S[i];
+//          S[i] = S[j];
+//          S[j] = temp;
+//          i++;
+//      }
+//      i = j = 0;
+//  }
+//
+//  void PRGA(unsigned  char *data, size_t datalen, unsigned char *output ) {
+//
+//             for (size_t k = 0; k < datalen; k++) {
+//                 i = (i + 1) % 256;
+//                 j = (j + S[i]) % 256;
+//
+//                 unsigned char temp = S[i];
+//                 S[i] = S[j];
+//                 S[j] = temp;
+//
+//                 unsigned char t = (S[i] + S[j]) % 256;
+//
+//                 //xor
+//                 output[k] = data[k] ^ S[t];
+//             }
+//         }
+//
+// public:
+//
+// };
+//
+//
+// int main() {
+//     std::cout << "Hello, World!" << std::endl;
+//     return 0;
+// }
+//
+
 #include <iostream>
 #include <fstream>
 
-class Encoder {
-private:
-    unsigned char* key; //массив ключа
-    size_t keySize;     
+using namespace std;
 
-    void swap(unsigned char& a, unsigned char& b) {
-        unsigned char temp = a;
-        a = b;
-        b = temp;
-    }
+class encoder {
+    unsigned char* key;
+    size_t keylen;
+    unsigned char S[256];
+    unsigned char i, j;
 
-    //с блок 123456...
-    void KSA(unsigned char* S) {
-        for (int i = 0; i < 256; ++i) {
+    void ksa() {
+        for (int i = 0; i < 256; i++) {
             S[i] = i;
         }
 
-        int j = 0;
-        for (int i = 0; i < 256; ++i) {
-            j = (j + S[i] + key[i % keySize]) % 256; //смешиваем с бло
-            swap(S[i], S[j]);
+        i = 0, j = 0;
+        while (i < 256) {
+            j = (j + S[i] + key[i % keylen]) % 256;  // Исправлено: K[i] на key[i % keylen]
+            unsigned char temp = S[i];
+            S[i] = S[j];
+            S[j] = temp;
+            i++;
         }
+        i = j = 0;
     }
 
-  //ксевдослуч массив к
-    void PRGA(unsigned char* S, unsigned char* data, size_t dataSize) {
-        int i = 0, j = 0;
-        for (size_t n = 0; n < dataSize; ++n) {
+    void PRGA(unsigned char* data, size_t datalen, unsigned char* output) {
+        for (size_t k = 0; k < datalen; k++) {
             i = (i + 1) % 256;
             j = (j + S[i]) % 256;
-            swap(S[i], S[j]); // Обмен значениями
-            data[n] ^= S[(S[i] + S[j]) % 256]; // Применяем XOR к данным
+
+            unsigned char temp = S[i];
+            S[i] = S[j];
+            S[j] = temp;
+
+            unsigned char t = (S[i] + S[j]) % 256;
+
+            output[k] = data[k] ^ S[t];
         }
     }
-
 
 public:
-    Encoder(unsigned char const* key, size_t keySize) {
-          this->keySize = keySize;
-      
-          this->key = new unsigned char[keySize]; //паямть для ключа
-        for (size_t i = 0; i < keySize; ++i) {
-            this->key[i] = key[i];
-        }
+    encoder(unsigned char const* key, size_t key_size) {
+        this->key = nullptr;
+        set_key(key, key_size);
     }
 
-    // Деструктор для освобождения памяти
-    ~Encoder() {
-        delete[] key;
+    //mutator для ключа
+    void set_key(unsigned char const* new_key, size_t new_keylen) {
+        if (key) delete[] key;
+        keylen = new_keylen;
+        key = new unsigned char[keylen];
+        for (size_t i = 0; i < keylen; i++) {
+            key[i] = new_key[i];
+        }
+        ksa();
     }
 
+    //метод encode
+    bool encode(char const* input_file, char const* output_file, bool encrypt) {
+        ifstream in(input_file, ios::binary);
+        if (!in) return false;
+
+        ofstream out(output_file, ios::binary);
+        if (!out) return false;
+
+        //определяем размер файла
+        in.seekg(0, ios::end);
+        size_t file_size = in.tellg();
+        in.seekg(0, ios::beg);
 
 
-    //метод для изменения ключа
-    void setKey(unsigned char const* newKey, size_t newKeySize) {
-        delete[] key; //осв паямть
-        keySize = newKeySize;
-        key = new unsigned char[keySize]; //пам под новый кл
-        for (size_t i = 0; i < keySize; ++i) {
-            key[i] = newKey[i]; 
-        }
+        unsigned char* buffer = new unsigned char[file_size];
+        in.read((char*)buffer, file_size);
+
+        unsigned char* result = new unsigned char[file_size];
+        PRGA(buffer, file_size, result);
+
+        out.write((char*)result, file_size);
+
+        delete[] buffer;
+        delete[] result;
+
+        return true;
     }
 
-
-
-    // шифров дешифровка
-    void encode(char const* inputFile, char const* outputFile, bool encrypt) {
-        std::ifstream inFile(inputFile, std::ios::binary); //открытие входногг
-        std::ofstream outFile(outputFile, std::ios::binary); // выходного
-
-        if (!inFile || !outFile) {
-            std::cerr << "Error opening file!" << std::endl;
-            return;
-        }
-//?? размер
-        inFile.seekg(0, std::ios::end);
-        size_t fileSize = inFile.tellg();
-        inFile.seekg(0, std::ios::beg);
-
-        //читаем данные из файла
-        unsigned char* data = new unsigned char[fileSize];
-        inFile.read(reinterpret_cast<char*>(data), fileSize);
-
-
-
-      
-    unsigned char S[256];
-    KSA(S);
-
-      
-    PRGA(S, data, fileSize);
-
-       
-        outFile.write(reinterpret_cast<char*>(data), fileSize);
-
-        delete[] data; 
+    ~encoder() {
+        if (key) delete[] key;
     }
 };
 
-
-
-
-
 int main() {
-    //ключ
-    unsigned char key[] = { 0x01, 0x23, 0x45, 0x67, 0x89, 0xAB, 0xCD, 0xEF };
-    size_t keySize = sizeof(key) / sizeof(key[0]);
 
+    unsigned char key[] = {0x01, 0x23, 0x45, 0x67, 0x89, 0xAB, 0xCD, 0xEF};
+    encoder rc4(key, sizeof(key));
 
-    Encoder encoder(key, keySize);
+    rc4.encode("input.txt", "encrypted.bin", true);
 
-
-  
-    encoder.encode("input.txt", "encrypted.bin", true);
-    std::cout << "File encrypted successfully!" << std::endl;
-
-    
-
-  
-    encoder.encode("encrypted.bin", "decrypted.txt", false);
-    std::cout << "File decrypted successfully!" << std::endl;
+    encoder rc4_decryptor(key, sizeof(key));
+    rc4_decryptor.encode("encrypted.bin", "decrypted.txt", false);
 
     return 0;
-}
+}}
